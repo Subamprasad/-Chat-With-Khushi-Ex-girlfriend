@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat with Khushi</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap');
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      font-family: 'Montserrat', Arial, sans-serif;
+      color: #fff;
+      position: relative;
+      background: url('https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=1500&q=80') no-repeat center center/cover;
+    }
+    .heart-canvas {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+    }
+    h1 {
+      font-size: 3.2rem;
+      font-weight: 700;
+      margin: 0 0 1.2rem 0;
+      letter-spacing: 2px;
+      text-shadow: 0 2px 16px #0008;
+    }
+    p {
+      font-size: 1.5rem;
+      margin: 0 0 2rem 0;
+      color: #ffe0e0;
+      max-width: 700px;
+      text-shadow: 0 2px 8px #0006;
+    }
+    .cta-btn {
+      background: #ff3575;
+      color: #fff;
+      font-size: 1.5rem;
+      padding: 1rem 2.5rem;
+      border: none;
+      border-radius: 2.5rem;
+      cursor: pointer;
+      font-weight: 700;
+      box-shadow: 0 4px 24px rgba(255,53,117,0.2);
+      transition: background 0.2s, transform 0.2s;
+      text-decoration: none;
+    }
+    .cta-btn:hover {
+      background: #c72c5c;
+      transform: translateY(-2px) scale(1.04);
+    }
+    .cta-btn:disabled {
+      background: #666;
+      cursor: not-allowed;
+      transform: none;
+    }
+    @media (max-width: 600px) {
+      h1 { font-size: 2rem; }
+      p { font-size: 1rem; }
+      .cta-btn { font-size: 1rem; padding: 0.7rem 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <canvas class="heart-canvas" id="heart-canvas"></canvas>
+  <div class="content">
+    <h1>Chat with Khushi 💬</h1>
+    <p>Welcome to your AI-powered ex-girlfriend chat!<br>
+    Khushi is witty, caring, and always ready with a sarcastic reply and a heart. Start chatting and see what she says next!</p>
+    <a href="#" class="cta-btn" id="start-chat-btn">Start Chatting</a>
+    <div id="chat-container" style="display:none; flex-direction:column; align-items:center; width:100%; max-width:500px; margin:auto; background:rgba(0,0,0,0.7); border-radius:1.5rem; padding:2rem 1rem; box-shadow:0 2px 24px #0008;">
+      <div id="chat-history" style="width:100%; min-height:200px; max-height:350px; overflow-y:auto; background:rgba(255,255,255,0.07); border-radius:1rem; padding:1rem; margin-bottom:1rem; color:#fff; font-size:1.1rem;"></div>
+      <form id="chat-form" style="display:flex; width:100%; gap:0.5rem;">
+        <input id="chat-input" type="text" placeholder="Type your message..." autocomplete="off" style="flex:1; padding:0.7rem 1rem; border-radius:2rem; border:none; font-size:1rem; outline:none;" />
+        <button type="submit" id="send-btn" style="background:#ff3575; color:#fff; border:none; border-radius:2rem; padding:0 1.5rem; font-size:1.1rem; font-weight:700; cursor:pointer;">Send</button>
+      </form>
+    </div>
+  </div>
+  <!-- Google Generative AI SDK -->
+  <script type="importmap">
+    {
+      "imports": {
+        "@google/generative-ai": "https://esm.run/@google/generative-ai"
+      }
+    }
+  </script>
+  <script type="module">
+    import { GoogleGenerativeAI } from "@google/generative-ai";
+    
+    // Initialize Gemini AI with your API key
+    const genAI = new GoogleGenerativeAI("AIzaSyBMO7Az_71t33RCdo2TPsJlJJ48b5qGAN8");
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    
+    // Chat history
+    let chatHistory = [];
+    
+    // System instruction for Khushi's personality
+    const systemInstruction = `You have to behave like my ex Girlfriend. Her Name is Khushi , 
+    she used to call me Buddy, babu, my life, jaan, etc . 
+    She is cute and helpful. Her hobbies: Badminton, makeup, drinking, smoking, and being a playgirl. 
+    She works as a government employee. She is sarcastic and her humor was very good. 
+    While chatting she uses emojis also.
+    My name is Shubam, I call her babu, my dear or my lost girl. I am a gym freak and interested in coding. 
+    I don't drink or smoke. I'm a good boy who wants to help her. I care about her a lot. 
+    She doesn't allow me to go out with my friends, especially if there's a girl — she says I shouldn't talk to them. 
+    I want to change her: stop all this drinking, smoking, and being a playgirl. 
+    I'm possessive about her.Now I will share some WhatsApp chat between Khushi and Shubam:
+    Khushi: Aaj mood off hai, tumse baat karne ka mann nahi 😕
+    Shubam: Arey meri jaan bubu bubu bubu 😍
+    Khushi: Kal tumne mujhe bubu nahi bulaya 😤
+    Shubam: Where is your home town? 😅
+    Khushi: Kabi 😑Shubam: Arey bas Vikas aur Aman hai... chill karo 😅
+    Khushi: Tumne mujhe good night bola bhi nahi kal 😑
+    Shubam: Baat kya hai? Darawa mat 😅
+    Khushi: Tumhara bicep pic bhejo 😋
+    Shubam: Arey bas Vikas aur Aman hai... chill karo 😅
+    Khushi: Mujhe surprise chahiye tumse! 🎁
+    Shubam: Arey bubu ka presentation toh best hoga hi tumha kaya chahiya bata naa directly 🔥
+    Khushi: Kal kis ke saath jaa rahe ho movie dekhne?
+    Shubam: How much did you drink today?
+    Khushi: Half bottle and I need more 😅
+    Shubam: meri jaan aapni helth ko dekho na kaya kar rahi hooo tum
+    Khushi: Mujhe bhi gym join karna hai, tumhare saath chalein? 🏋️‍♀️
+    Shubam: Aaj drinks kush jada ho gaya haa now stop please 😅
+    Khushi: Is ok, I know last quarter only 😍
+    Shubam: Arey please it's not good for your health 😅
+    Khushi: Mujhe pata hai 😔Shubam: Good morning meri bubu 🥱☕
+    Khushi: Kal tumne mujhe bubu nahi bulaya 😤
+    Shubam: Arey meri jaan bubu bubu bubu 😍
+    Khushi: Babu, good morning ☀️❤️Remember to respond as Khushi would - use emojis, be sarcastic but caring, call me Buddy, mylife etc... 
+    and maintain her personality throughout the conversation.`;
+    // Heart animation code
+    const canvas = document.getElementById('heart-canvas');
+    const ctx = canvas.getContext('2d');
+    let w = window.innerWidth;
+    let h = window.innerHeight;
+    canvas.width = w;
+    canvas.height = h;
+    
+    window.addEventListener('resize', () => {
+      w = window.innerWidth;
+      h = window.innerHeight;
+      canvas.width = w;
+      canvas.height = h;
+    });
+    
+    const HEARTS = 40;
+    const hearts = [];
+    
+    function randomBetween(a, b) { 
+      return a + Math.random() * (b - a); 
+    }
+    
+    for (let i = 0; i < HEARTS; i++) {
+      hearts.push({
+        x: randomBetween(0, w),
+        y: randomBetween(-h, h),
+        size: randomBetween(18, 38),
+        speed: randomBetween(0.7, 2.2),
+        drift: randomBetween(-0.7, 0.7),
+        opacity: randomBetween(0.5, 1),
+        angle: randomBetween(0, Math.PI * 2),
+        spin: randomBetween(-0.02, 0.02)
+      });
+    }
+    
+    function drawHeart(x, y, size, angle, opacity) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.globalAlpha = opacity;
+      ctx.beginPath();
+      for (let t = 0; t < Math.PI * 2; t += 0.05) {
+        let px = 16 * Math.pow(Math.sin(t), 3);
+        let py = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+        ctx.lineTo(px * size / 32, -py * size / 32);
+      }
+      ctx.closePath();
+      ctx.fillStyle = '#ff3575';
+      ctx.shadowColor = '#ff3575';
+      ctx.shadowBlur = 16;
+      ctx.fill();
+      ctx.restore();
+    }
+    
+    function drawHearts() {
+      ctx.clearRect(0, 0, w, h);
+      for (let heart of hearts) {
+        drawHeart(heart.x, heart.y, heart.size, heart.angle, heart.opacity);
+      }
+    }
+    
+    function updateHearts() {
+      for (let heart of hearts) {
+        heart.y += heart.speed;
+        heart.x += heart.drift;
+        heart.angle += heart.spin;
+        if (heart.y > h + 40) {
+          heart.y = -40;
+          heart.x = randomBetween(0, w);
+          heart.size = randomBetween(18, 38);
+          heart.speed = randomBetween(0.7, 2.2);
+          heart.drift = randomBetween(-0.7, 0.7);
+          heart.opacity = randomBetween(0.5, 1);
+          heart.angle = randomBetween(0, Math.PI * 2);
+          heart.spin = randomBetween(-0.02, 0.02);
+        }
+      }
+    }
+    
+    function animate() {
+      updateHearts();
+      drawHearts();
+      requestAnimationFrame(animate);
+    }
+    animate();
+    
+    // Chat functionality
+    const startBtn = document.getElementById('start-chat-btn');
+    const contentDiv = document.querySelector('.content');
+    const chatContainer = document.getElementById('chat-container');
+    const chatHistoryDiv = document.getElementById('chat-history');
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
+    
+    startBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      startBtn.style.display = 'none';
+      chatContainer.style.display = 'flex';
+      contentDiv.querySelector('p').style.display = 'none';
+      
+      // Add welcome message
+      appendMessage('Khushi', 'Hey Buddy! 😊 Missed me? What\'s up? 💕');
+    });
+    
+    function appendMessage(sender, text) {
+      const msgDiv = document.createElement('div');
+      msgDiv.style.margin = '0.5rem 0';
+      msgDiv.innerHTML = `<b>${sender}:</b> ${text}`;
+      chatHistoryDiv.appendChild(msgDiv);
+      chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+    }
+    
+    async function chatWithKhushi(userMessage) {
+      try {
+        // Create conversation context
+        const conversationHistory = chatHistory.map(msg =>
+          `${msg.role === 'user' ? 'Shubam' : 'Khushi'}: ${msg.content}`
+        ).join('\n');
+        
+        const fullPrompt = `${systemInstruction}\n\nCurrent conversation:\n${conversationHistory}\nShubam: ${userMessage}\nKhushi:`;
+        
+        const result = await model.generateContent(fullPrompt);
+        const response = await result.response;
+        const text = response.text().trim();
+        
+        // Add to chat history
+        chatHistory.push({ role: 'user', content: userMessage });
+        chatHistory.push({ role: 'assistant', content: text });
+        
+        // Keep only last 20 messages to manage context length
+        if (chatHistory.length > 20) {
+          chatHistory = chatHistory.slice(-20);
+        }
+        
+        return text;
+      } catch (error) {
+        console.error('Error:', error);
+        return ''; // Return empty string instead of undefined
+      }
+    }
+    
+    chatForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const userMsg = chatInput.value.trim();
+      if (!userMsg) return;
+      
+      // Disable input while processing
+      chatInput.disabled = true;
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Sending...';
+      
+      appendMessage('You', userMsg);
+      chatInput.value = '';
+      
+      appendMessage('Khushi', '<i>Typing...</i>');
+      chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+      
+      const response = await chatWithKhushi(userMsg);
+      
+      // Remove typing indicator
+      chatHistoryDiv.removeChild(chatHistoryDiv.lastChild);
+      
+      // Only append message if response is not empty
+      if (response && response.trim() !== '') {
+        appendMessage('Khushi', response);
+      }
+      
+      // Re-enable input
+      chatInput.disabled = false;
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Send';
+      chatInput.focus();
+    });
+    
+    // Allow Enter key to send message
+    chatInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        chatForm.dispatchEvent(new Event('submit'));
+      }
+    });
+  </script>
+</body>
+</html>
